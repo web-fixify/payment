@@ -1,0 +1,100 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>QR Code Display</title>
+    <link rel="stylesheet" type="text/css" href="display.css">
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css">
+    <style>
+        .fullscreen-container {
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            min-height: 100vh;
+            background-color: #f0f0f0;
+        }
+
+        .image-container {
+            text-align: center;
+        }
+    </style>
+    <script src="https://www.gstatic.com/firebasejs/8.10.0/firebase-app.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/8.10.0/firebase-database.js"></script>
+    <script src="https://cdn.rawgit.com/davidshimjs/qrcodejs/gh-pages/qrcode.min.js"></script>
+</head>
+<body>
+    <div class="fullscreen-container">
+        <div class="container">
+            <h1 class="text-center mb-4">QR Code Display</h1>
+            <div class="row mb-3">
+                <div class="col-md-6 offset-md-3">
+                    <div id="qrCode" class="d-flex justify-content-center"></div>
+                </div>
+            </div>
+            <div class="row mb-3">
+                <div class="col-md-6 offset-md-3">
+                    <div class="text-center">Price: <span id="priceText"></span></div>
+                </div>
+            </div>
+            <div class="row">
+                <div class="col-md-6 offset-md-3">
+                    <div class="image-container">
+                        <img id="imageDisplay" src="" alt="" class="mt-4">
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        var firebaseConfig = {
+            apiKey: "AIzaSyAGt_PyRqd2KE0wGpbPeTvlD0KxSnOxw1M",
+            authDomain: "fixify-ed991.firebaseapp.com",
+            databaseURL: "https://fixify-ed991-default-rtdb.firebaseio.com",
+            projectId: "fixify-ed991",
+            storageBucket: "fixify-ed991.appspot.com",
+            messagingSenderId: "1048111911747",
+            appId: "1:1048111911747:web:77d2d8014e7cfcafe995f6"
+        };
+        // Initialize Firebase
+        firebase.initializeApp(firebaseConfig);
+
+        var qr = new QRCode(document.getElementById("qrCode"), {
+            width: 256,
+            height: 256
+        });
+
+        var priceText = document.getElementById("priceText");
+        var imageDisplay = document.getElementById("imageDisplay");
+
+        firebase.database().ref('transactions').on('child_added', function(snapshot) {
+            var data = snapshot.val();
+
+            if (data.upiLink) {
+                qr.makeCode(data.upiLink);
+                var price = extractPriceFromUpiLink(data.upiLink);
+                priceText.textContent = price + " INR";
+            }
+
+            if (data.noImage) {
+                imageDisplay.style.display = 'none';
+            } else {
+                var status = data.status;
+                if (status === 'received') {
+                    imageDisplay.src = '1.jpg';
+                } else if (status === 'pending') {
+                    imageDisplay.src = '2.jpg';
+                } else if (status === 'failed') {
+                    imageDisplay.src = '3.jpg';
+                }
+
+                imageDisplay.style.display = 'block';
+            }
+        });
+
+        function extractPriceFromUpiLink(upiLink) {
+            var match = upiLink.match(/am=(\d+(?:\.\d+)?)/);
+            return match ? match[1] : 'N/A';
+        }
+    </script>
+</body>
+</html>
